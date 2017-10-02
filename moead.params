@@ -4,11 +4,14 @@ popSize 500
 numObjectives 2
 numNeighbours 30
 crossoverProbability 0.8
-mutationProbability 0.2
+mutationProbability 0.1
+localSearchProbability 0.1
 stopCrit moead.GenerationStoppingCriteria
 indType representation.FragmentedIndividual
 mutOperator representation.FragmentedMutationOperator
 crossOperator representation.FragmentedCrossoverOperator
+localOperator representation.FragmentedLocalSearchOperator
+numLocalSearchTries 30
 outFileName out.stat
 frontFileName front.stat
 serviceRepository services-output.xml

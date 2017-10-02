@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 
 import representation.FragmentedCrossoverOperator;
 import representation.FragmentedIndividual;
+import representation.FragmentedLocalSearchOperator;
 import representation.FragmentedMutationOperator;
 
 /**
@@ -47,11 +48,14 @@ public class MOEAD {
 	public static int numObjectives = 2;
 	public static int numNeighbours = 30;
 	public static double crossoverProbability = 0.8;
-	public static double mutationProbability = 0.2;
+	public static double mutationProbability = 0.1;
+	public static double localSearchProbability = 0.1;
 	public static StoppingCriteria stopCrit = new GenerationStoppingCriteria(generations);
 	public static Individual indType = new FragmentedIndividual();
 	public static MutationOperator mutOperator = new FragmentedMutationOperator();
 	public static CrossoverOperator crossOperator = new FragmentedCrossoverOperator();
+	public static LocalSearchOperator localOperator = new FragmentedLocalSearchOperator();
+	public static int numLocalSearchTries = 30;
 	public static String outFileName = "out.stat";
 	public static String frontFileName = "front.stat";
 	public static String serviceRepository = "services-output.xml";
@@ -70,6 +74,10 @@ public class MOEAD {
 	public static final int RELIABILITY = 1;
 	public static final int TIME = 2;
 	public static final int COST = 3;
+
+	public static final int CROSSOVER = 0;
+	public static final int MUTATION = 1;
+	public static final int LOCAL_SEARCH = 2;
 
 	// Internal state
 	private Individual[] population = new Individual[popSize];
@@ -129,75 +137,85 @@ public class MOEAD {
 	 */
 	private void setParam(String token, String param) {
 		try {
-			switch(token) {
-		        case "seed":
-		       	 seed = Long.valueOf(param);
-		            break;
-		        case "generations":
-		       	 generations = Integer.valueOf(param);
-		       	 break;
-		        case "popSize":
-		       	 popSize = Integer.valueOf(param);
-		       	 break;
-		        case "numObjectives":
-		       	 numObjectives = Integer.valueOf(param);
-		            break;
-		        case "numNeighbours":
-		       	 numNeighbours = Integer.valueOf(param);
-		            break;
-		        case "crossoverProbability":
-		       	 crossoverProbability = Double.valueOf(param);
-		       	 break;
-		        case "mutationProbability":
-		       	 mutationProbability = Double.valueOf(param);
-		            break;
-		        case "stopCrit":
-		       	 stopCrit = (StoppingCriteria) Class.forName(param).getConstructor(Integer.TYPE).newInstance(generations);
-		       	 break;
-		        case "indType":
-		       	 indType = (Individual) Class.forName(param).newInstance();
-		       	 break;
-		        case "mutOperator":
-		       	 mutOperator = (MutationOperator) Class.forName(param).newInstance();
-		       	 break;
-		        case "crossOperator":
-		       	 crossOperator = (CrossoverOperator) Class.forName(param).newInstance();
-		       	 break;
-		        case "outFileName":
-		       	 outFileName = param;
-		       	 break;
-		        case "frontFileName":
-		       	 frontFileName = param;
-		       	 break;
-		        case "serviceRepository":
-		       	 serviceRepository = param;
-		       	 break;
-		        case "serviceTaxonomy":
-		       	 serviceTaxonomy = param;
-		       	 break;
-		        case "serviceTask":
-		       	 serviceTask = param;
-		       	 break;
-		        case "tchebycheff":
-		         tchebycheff = Boolean.valueOf(param);
-		         break;
-		        case "dynamicNormalisation":
-		         dynamicNormalisation = Boolean.valueOf(param);
-		         break;
-		        case "w1":
-		       	 w1 = Double.valueOf(param);
-		       	 break;
-		        case "w2":
-		       	 w2 = Double.valueOf(param);
-		       	 break;
-		        case "w3":
-		       	 w3 = Double.valueOf(param);
-		       	 break;
-		        case "w4":
-		       	 w4 = Double.valueOf(param);
-		       	 break;
-		        default:
-		            throw new IllegalArgumentException("Invalid parameter: " + token);
+			switch (token) {
+			case "seed":
+				seed = Long.valueOf(param);
+				break;
+			case "generations":
+				generations = Integer.valueOf(param);
+				break;
+			case "popSize":
+				popSize = Integer.valueOf(param);
+				break;
+			case "numObjectives":
+				numObjectives = Integer.valueOf(param);
+				break;
+			case "numNeighbours":
+				numNeighbours = Integer.valueOf(param);
+				break;
+			case "crossoverProbability":
+				crossoverProbability = Double.valueOf(param);
+				break;
+			case "mutationProbability":
+				mutationProbability = Double.valueOf(param);
+				break;
+			case "localSearchProbability":
+				localSearchProbability = Double.valueOf(param);
+				break;
+			case "stopCrit":
+				stopCrit = (StoppingCriteria) Class.forName(param).getConstructor(Integer.TYPE)
+						.newInstance(generations);
+				break;
+			case "indType":
+				indType = (Individual) Class.forName(param).newInstance();
+				break;
+			case "mutOperator":
+				mutOperator = (MutationOperator) Class.forName(param).newInstance();
+				break;
+			case "crossOperator":
+				crossOperator = (CrossoverOperator) Class.forName(param).newInstance();
+				break;
+			case "localOperator":
+				localOperator = (LocalSearchOperator) Class.forName(param).newInstance();
+				break;
+			case "numLocalSearchTries":
+				numLocalSearchTries = Integer.valueOf(param);
+				break;
+			case "outFileName":
+				outFileName = param;
+				break;
+			case "frontFileName":
+				frontFileName = param;
+				break;
+			case "serviceRepository":
+				serviceRepository = param;
+				break;
+			case "serviceTaxonomy":
+				serviceTaxonomy = param;
+				break;
+			case "serviceTask":
+				serviceTask = param;
+				break;
+			case "tchebycheff":
+				tchebycheff = Boolean.valueOf(param);
+				break;
+			case "dynamicNormalisation":
+				dynamicNormalisation = Boolean.valueOf(param);
+				break;
+			case "w1":
+				w1 = Double.valueOf(param);
+				break;
+			case "w2":
+				w2 = Double.valueOf(param);
+				break;
+			case "w3":
+				w3 = Double.valueOf(param);
+				break;
+			case "w4":
+				w4 = Double.valueOf(param);
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid parameter: " + token);
 			}
 		}
 		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException e) {
@@ -331,9 +349,9 @@ public class MOEAD {
 		if (!dynamicNormalisation)
 			calculateNormalisationBounds(relevant);
 
-		// Ensure that mutation and crossover probabilities add up to 1
-		if (mutationProbability + crossoverProbability != 1.0)
-			throw new RuntimeException("The probabilities for mutation and crossover should add up to 1.");
+		// Ensure that mutation, crossover, and local search probabilities add up to 1
+		if (mutationProbability + crossoverProbability + localSearchProbability != 1.0)
+			throw new RuntimeException("The probabilities for mutation, crossover, and local search should add up to 1.");
 		// Initialise random number
 		random = new Random(seed);
 		// Initialise the reference point
@@ -466,22 +484,33 @@ public class MOEAD {
 	private Individual evolveNewIndividual(Individual original, int index, Random random) {
 		// Check whether to apply mutation or crossover
 		double r = random.nextDouble();
-		boolean performCrossover;
+		int chosenOperation;
 		if (r <= crossoverProbability)
-			performCrossover = true;
+			chosenOperation = CROSSOVER;
+		else if (r <= crossoverProbability + mutationProbability)
+			chosenOperation = MUTATION;
+		else if (r <= crossoverProbability + mutationProbability + localSearchProbability)
+			chosenOperation = LOCAL_SEARCH;
 		else
-			performCrossover = false;
+			throw new RuntimeException("Invalid random value when selecting ");
 
 		// Perform crossover if that is the chosen operation
-		if (performCrossover) {
+		if (chosenOperation == CROSSOVER) {
 			// Select a neighbour at random
 			int neighbourIndex = random.nextInt(numNeighbours);
 			Individual neighbour = population[neighbourIndex];
 			return crossOperator.doCrossover(original.clone(), neighbour.clone(), this);
 		}
 		// Else, perform mutation
-		else {
+		else if (chosenOperation == MUTATION) {
 			return mutOperator.mutate(original.clone(), this);
+		}
+		// Else, perform local search
+		else if (chosenOperation == LOCAL_SEARCH) {
+			return localOperator.doSearch(original.clone(), this, index);
+		}
+		else {
+			throw new RuntimeException("Invalid operation selected.");
 		}
 	}
 
@@ -524,7 +553,7 @@ public class MOEAD {
 	 * @param problemIndex - for retrieving weights
 	 * @return score
 	 */
-	private double calculateScore(Individual ind, int problemIndex) {
+	public double calculateScore(Individual ind, int problemIndex) {
 		double[] problemWeights = weights[problemIndex];
 		double sum = 0;
 		for (int i = 0; i < numObjectives; i++)
@@ -540,7 +569,7 @@ public class MOEAD {
 	 * @param problemIndex - for retrieving weights and ideal point
 	 * @return score
 	 */
-	private double calculateTchebycheffScore(Individual ind, int problemIndex) {
+	public double calculateTchebycheffScore(Individual ind, int problemIndex) {
 		double[] problemWeights = weights[problemIndex];
 		double max_fun = -1 * Double.MAX_VALUE;
 

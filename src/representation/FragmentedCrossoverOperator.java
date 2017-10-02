@@ -13,7 +13,6 @@ import java.util.Set;
 import moead.CrossoverOperator;
 import moead.Individual;
 import moead.MOEAD;
-import moead.Service;
 
 public class FragmentedCrossoverOperator extends CrossoverOperator {
 
