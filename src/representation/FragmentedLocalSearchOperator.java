@@ -15,7 +15,7 @@ public class FragmentedLocalSearchOperator extends LocalSearchOperator {
 	@Override
 	public Individual doSearch(Individual ind, MOEAD init, int problemIndex) {
 		if (!(ind instanceof FragmentedIndividual))
-			throw new RuntimeException("IndirectMutationOperator can only work on objects of type IndirectIndividual.");
+			throw new RuntimeException("FragmentedLocalSearchOperator can only work on objects of type FragmentedIndividual.");
 		FragmentedIndividual tree = (FragmentedIndividual) ind;
 
 		// Randomly select a node in the tree to be mutated

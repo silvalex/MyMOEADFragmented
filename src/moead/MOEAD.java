@@ -237,6 +237,8 @@ public class MOEAD {
 
 		// Initialise
 		long startTime = System.currentTimeMillis();
+		Set<Individual> externalPopulation = new HashSet<Individual>();
+
 		initialise();
 		breedingTime[generation] = System.currentTimeMillis() - startTime;
 
@@ -280,6 +282,8 @@ public class MOEAD {
 				finishEvaluating();
 			// Copy the next generation over as the new population
 			population = newGeneration;
+			Collections.addAll(externalPopulation, population);
+			externalPopulation = produceParetoFront(externalPopulation);
 			long endTime = System.currentTimeMillis();
 			evaluationTime[generation] = endTime - startTime;
 			// Write out stats
@@ -287,11 +291,8 @@ public class MOEAD {
 			generation++;
 		}
 
-
-		// Produce final Pareto front
-		Set<Individual> paretoFront = produceParetoFront(population);
 		// Write the front to disk
-		writeFrontStatistics(frontWriter, paretoFront);
+		writeFrontStatistics(frontWriter, externalPopulation);
 
 		// Close writers
 		try {
@@ -485,11 +486,11 @@ public class MOEAD {
 		// Check whether to apply mutation or crossover
 		double r = random.nextDouble();
 		int chosenOperation;
-		if (r <= crossoverProbability)
+		if (crossoverProbability != 0.0 && r <= crossoverProbability)
 			chosenOperation = CROSSOVER;
-		else if (r <= crossoverProbability + mutationProbability)
+		else if (mutationProbability != 0.0 && r <= crossoverProbability + mutationProbability)
 			chosenOperation = MUTATION;
-		else if (r <= crossoverProbability + mutationProbability + localSearchProbability)
+		else if (localSearchProbability != 0.0 && r <= crossoverProbability + mutationProbability + localSearchProbability)
 			chosenOperation = LOCAL_SEARCH;
 		else
 			throw new RuntimeException("Invalid random value when selecting ");
@@ -606,7 +607,7 @@ public class MOEAD {
 	 * @param population
 	 * @return Pareto front
 	 */
-	private Set<Individual> produceParetoFront(Individual[] population) {
+	private Set<Individual> produceParetoFront(Set<Individual> population) {
 		// Initialise sets/variable for tracking current front
 		Set<Individual> front = new HashSet<Individual>();
 		Set<Individual> toRemove = new HashSet<Individual>();
